@@ -1,20 +1,29 @@
-# ADR-008: UI Logic Separation
+# ADR-008 — Separação entre UI e lógica
 
-Status: Accepted
+## Contexto
 
-## Context
+Para que uma micro seja integrável, a lógica funcional não pode viver diretamente na janela principal standalone.
 
-Core integration requires reuse of product functionality without reusing a full standalone window.
+## Decisão
 
-## Decision
+Cada micro deve separar UI, application services, engine, domain models, persistence e integration adapter.
 
-Business logic must live outside PySide6 widgets where practical. Standalone windows should host reusable product widgets.
+A janela standalone compõe o widget funcional. O Core hospeda esse mesmo widget em modo integrado.
 
-## Consequences
+## Consequências
 
-Modules can expose widgets to Core without duplicating functional UI.
+- Menos duplicação de UI.
+- Standalone e integrado usam a mesma base funcional.
+- Testes de engine e service ficam mais simples.
+- Refatorações devem preservar comportamento standalone.
 
-## Alternatives Considered
+## Alternativas consideradas
 
-- Keep all behavior in `QMainWindow`: rejected because it blocks clean embedding.
+- Duplicar tela integrada no Core.
+- Reutilizar `QMainWindow` inteira dentro do Core.
+- Manter lógica de negócio nos widgets principais.
+
+## Status
+
+Aceito
 

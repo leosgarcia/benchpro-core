@@ -1,20 +1,33 @@
-# ADR-006: Per-Product Databases
+# ADR-006 — Bancos por produto
 
-Status: Accepted
+## Contexto
 
-## Context
+Cada micro aplicação possui histórico, schema e regras de persistência próprias. Um banco único criaria acoplamento entre produtos e dificultaria evolução independente.
 
-Each product must remain standalone and own its history/settings.
+## Decisão
 
-## Decision
+Cada produto mantém seu próprio banco SQLite.
 
-Each product owns its SQLite database and data directory.
+Exemplos:
 
-## Consequences
+- `bench-pro-core.db`
+- `dns-bench-pro.db`
+- `smtp-bench-pro.db`
 
-Core must not query micro databases directly. Unified history requires module-provided APIs.
+## Consequências
 
-## Alternatives Considered
+- Schema de cada produto evolui separadamente.
+- Core não executa SQL direto em banco de micro.
+- Integração de histórico deve usar API/repository do módulo.
+- Backups e troubleshooting ficam isolados por produto.
 
-- One shared SQLite database: rejected because it couples schema evolution across products.
+## Alternativas consideradas
+
+- Banco único para toda a suíte.
+- Core como dono do schema de todas as micros.
+- Replicação automática de dados para o Core.
+
+## Status
+
+Aceito
 

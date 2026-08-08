@@ -1,87 +1,115 @@
-# Manual Test Checklist
+# Checklist de Teste Manual
 
-Status: Core Shell hardening checklist
+## Objetivo
 
-## Startup
+Este checklist valida a experiência integrada do Bench Pro Core com módulos reais instalados em modo editable.
 
-- [ ] Application opens without traceback.
-- [ ] Window title is `Bench Pro Core`.
-- [ ] Status bar shows a short ready state.
-- [ ] Menu `Arquivo` contains `Sair`.
-- [ ] Menu `Ajuda` contains `Sobre o Bench Pro Core`.
+## Preparação
+
+Workspace esperado:
+
+```text
+BENCHPRO/
+├── benchpro-core/
+├── dns-bench-pro/
+└── smtp-bench-pro/
+```
+
+Instalação:
+
+```bash
+cd benchpro-core
+python -m pip install -e .
+python -m pip install -e ..\dns-bench-pro
+python -m pip install -e ..\smtp-bench-pro
+```
 
 ## Discovery
 
-- [ ] Installed compatible modules are discovered.
-- [ ] DNS Bench Pro appears when installed via editable package.
-- [ ] No placeholder modules such as SMTP/SSL/HTTP are shown unless actually installed.
-- [ ] Unavailable modules, if any, appear under `Módulos indisponíveis`.
+Executar:
 
-## Navigation
+```bash
+python -m benchpro_core --list-modules
+```
 
-- [ ] Module selection is visually clear.
-- [ ] Up/Down keyboard navigation works.
-- [ ] Enter activates the highlighted module.
-- [ ] Module tooltip shows version and Integration API.
-- [ ] Unavailable module tooltip shows a summarized reason without traceback.
+Esperado:
 
-## DNS Mount
+```text
+DNS Bench Pro 1.0.0 [API 1]
+SMTP Bench Pro 0.2.5 [API 1]
+```
 
-- [ ] Selecting `DNS Bench Pro` mounts the DNS module widget.
-- [ ] DNS tabs shown in integrated mode are `Benchmark`, `Servidores`, `Histórico`, and `Análises`.
-- [ ] DNS `Sobre` tab is not shown in integrated mode.
-- [ ] Switching away and back reuses the same DNS widget instance during the session.
+## Core GUI
 
-## DNS Benchmark
+Executar:
 
-- [ ] Benchmark starts from inside Core.
-- [ ] Progress updates incrementally.
-- [ ] Results appear in the table.
-- [ ] Final status is shown by the DNS widget.
-- [ ] No Core-specific action is required for DNS worker/thread lifecycle.
+```bash
+python -m benchpro_core
+```
 
-## DNS History
+Validar:
 
-- [ ] A completed DNS benchmark is saved in DNS Bench Pro history.
-- [ ] History tab loads saved sessions.
-- [ ] Core does not read DNS SQLite tables directly.
+- janela abre com título Bench Pro Core;
+- navegação lateral aparece;
+- módulos descobertos aparecem dinamicamente;
+- estado vazio é exibido antes da seleção;
+- menu Arquivo/Sair funciona;
+- Sobre lista módulos carregados.
 
-## DNS Charts
+## DNS integrado
 
-- [ ] Analysis tab renders DNS charts after a benchmark.
-- [ ] Switching modules does not destroy chart state unexpectedly.
+Validar:
 
-## Window Resize
+- DNS aparece na navegação;
+- selecionar DNS monta widget;
+- abas funcionais aparecem;
+- não há menu standalone duplicado;
+- não há aba Sobre do DNS no modo integrado;
+- benchmark continua responsivo.
 
-- [ ] Window can be resized.
-- [ ] Navigation width remains usable.
-- [ ] Module container resizes cleanly.
+## SMTP integrado
 
-## Window Restore
+Validar:
 
-- [ ] Close and reopen restores previous window geometry.
-- [ ] Maximized state restores correctly.
-- [ ] Invalid settings fall back to a professional default size.
+- SMTP aparece na navegação;
+- selecionar SMTP monta widget;
+- abas Benchmark, Diagnóstico, Segurança e Histórico aparecem;
+- exportação histórica permanece local ao SMTP;
+- comparação histórica permanece local ao SMTP;
+- não há aba Sobre no modo integrado.
 
-## Module Failure
+## Troca de módulos
 
-- [ ] A broken module does not prevent Core startup.
-- [ ] Broken module is shown under `Módulos indisponíveis`.
-- [ ] Selecting it shows `Módulo indisponível` in the container.
-- [ ] UI message contains no traceback, full local path, token, or credential.
-- [ ] Technical details are present only in logs.
+Executar sequência:
 
-## About
+```text
+DNS → SMTP → DNS → SMTP
+```
 
-- [ ] About dialog shows Bench Pro Core version.
-- [ ] About dialog shows Integration API 1.
-- [ ] Loaded modules are listed.
-- [ ] Unavailable modules are listed only when present.
+Validar:
+
+- widgets são reutilizados;
+- estado interno não é perdido desnecessariamente;
+- nenhum módulo interfere no outro;
+- Core permanece responsivo.
 
 ## Shutdown
 
-- [ ] Closing Core calls `registry.shutdown_all()`.
-- [ ] All loaded modules receive `shutdown()`.
-- [ ] A shutdown failure in one module does not block window close.
-- [ ] Window settings are saved.
-- [ ] Logs are flushed.
+Fechar Core.
+
+Validar:
+
+- `shutdown()` é chamado nos módulos;
+- exceções não fecham abruptamente a aplicação;
+- logs são gravados pelo Core.
+
+## Standalone após integração
+
+Executar fora do Core:
+
+```bash
+python -m smtp_bench_pro
+python src/main.py  # no DNS Bench Pro
+```
+
+Ambos devem continuar funcionando como produtos independentes.

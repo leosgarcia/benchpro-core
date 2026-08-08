@@ -1,20 +1,29 @@
-# ADR-005: No Shared SDK Yet
+# ADR-005 — Não criar SDK compartilhado ainda
 
-Status: Accepted
+## Contexto
 
-## Context
+Um SDK compartilhado poderia parecer conveniente, mas criaria dependência prematura entre micros e Core.
 
-A shared SDK could reduce duplication but also create premature framework coupling.
+## Decisão
 
-## Decision
+Não criar `benchpro-sdk`, `benchpro-common` ou pacote compartilhado nesta fase.
 
-Do not create `benchpro-sdk`, `benchpro-common`, or similar packages in v1.
+O Core valida módulos por contrato local e duck typing.
 
-## Consequences
+## Consequências
 
-The first modules use metadata, duck typing, and Core-local protocols. Shared code may be extracted later under the Rule of Three.
+- Menor acoplamento inicial.
+- Menos risco de framework interno prematuro.
+- Possível duplicação pequena e aceitável no curto prazo.
+- Extração futura seguirá Rule of Three.
 
-## Alternatives Considered
+## Alternativas consideradas
 
-- Create SDK immediately: rejected as premature.
+- SDK obrigatório desde v1.
+- Pacote comum de UI/configuração.
+- Compartilhar QSS e helpers por runtime dependency.
+
+## Status
+
+Aceito
 

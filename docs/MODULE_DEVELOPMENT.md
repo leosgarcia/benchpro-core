@@ -1,128 +1,108 @@
-# Bench Pro Module Development Guide
+# Guia de Desenvolvimento de Módulos Bench Pro
 
-Status: Draft v1.0
+## Objetivo
 
-## Principle
+Este guia orienta a criação de novas micro aplicações compatíveis com o Bench Pro Core.
 
-Build every micro as a standalone product first. Integration is an additional capability.
+## Princípio standalone first
 
-The module should know its domain. Bench Pro Core should know how to host modules.
+Toda micro deve funcionar completamente sozinha antes de ser integrada.
 
-## Recommended Structure
+Requisitos mínimos:
+
+- `python -m nome_do_produto` funcional;
+- executável próprio no futuro;
+- banco próprio;
+- configuração própria;
+- testes próprios;
+- README próprio;
+- LICENSE próprio;
+- CI própria.
+
+## Estrutura recomendada
 
 ```text
 src/
-└── smtp_bench_pro/
+└── produto_bench_pro/
     ├── application/
     ├── domain/
     ├── engine/
     ├── persistence/
     ├── export/
-    ├── reporting/
+    ├── security/
     ├── ui/
-    │   ├── widgets/
-    │   └── windows/
     ├── integration/
-    │   ├── __init__.py
-    │   └── module.py
-    ├── settings/
-    ├── utils/
+    ├── paths.py
     ├── version.py
     └── __main__.py
 ```
 
-## Layering Rules
+Nem todos os pacotes são obrigatórios no início, mas a separação entre UI, application services, engine e persistence deve ser preservada.
 
-- UI widgets render state and collect user intent.
-- Application services orchestrate workflows.
-- Engines perform protocol-specific work.
-- Persistence owns database access.
-- Export/reporting receive structured data.
-- Integration adapts the product to the Core contract.
+## Separação UI/lógica
 
-Avoid putting protocol logic, statistics, persistence, or export orchestration directly inside `QMainWindow`.
-
-## Standalone First
-
-Each product must support:
+Errado:
 
 ```text
-python -m product_package
-Product-Name.exe
+MainWindow → abre socket → calcula estatística → salva banco
 ```
 
-Standalone behavior must not depend on Bench Pro Core.
+Correto:
 
-## Integration Package
+```text
+Widget → Application Service → Engine → Domain Models → Repository
+```
 
-The integration package should expose one module class.
+Essa separação permite que o Core hospede o widget sem conhecer lógica interna.
 
-Example:
+## Integração opcional
+
+Adicionar pacote:
+
+```text
+integration/
+├── __init__.py
+└── module.py
+```
+
+Exemplo conceitual:
 
 ```python
-class SMTPBenchModule:
-    module_id = "smtp"
-    display_name = "SMTP Bench Pro"
-    version = "1.0.0"
+class ProdutoBenchModule:
+    module_id = "produto"
+    display_name = "Produto Bench Pro"
+    version = __version__
     integration_api = 1
     vendor = "WL Tech"
-    capabilities = {"benchmark", "diagnostics", "security_audit", "history", "reports"}
+    capabilities = frozenset({"benchmark", "history"})
 
-    def initialize(self, context=None):
-        ...
-
-    def create_widget(self, parent=None):
-        ...
-
-    def shutdown(self):
-        ...
+    def initialize(self): ...
+    def create_widget(self, parent=None): ...
+    def shutdown(self): ...
 ```
 
-## Entry Point
+## Entry point
 
 ```toml
 [project.entry-points."benchpro.modules"]
-smtp = "smtp_bench_pro.integration.module:SMTPBenchModule"
+produto = "produto_bench_pro.integration.module:ProdutoBenchModule"
 ```
 
-## UI Integration
+## Testes obrigatórios
 
-A module must return a root widget, not a standalone main window.
+- contrato de integração;
+- widget integrado sem tela Sobre;
+- standalone continua funcionando;
+- migrations de banco;
+- fronteiras de segurança;
+- regressão das principais features.
 
-Preferred shape:
+## Versionamento
 
-```text
-StandaloneMainWindow
-    |
-    v
-ProductWidget
+A versão comercial segue SemVer.
 
-Bench Pro Core
-    |
-    v
-ProductWidget
-```
+A versão do Integration API é inteiro separado.
 
-## Data
+## Empacotamento
 
-Each product owns its data directory, SQLite database, settings, and logs.
-
-Core must not query a product database directly.
-
-## Required Tests
-
-Minimum tests:
-
-- engine unit tests
-- application service tests
-- persistence tests
-- export tests
-- UI smoke tests
-- standalone startup test
-- integration contract test
-- architecture import test preventing `bench_pro_core` imports
-
-## Packaging
-
-Each micro builds its own executable and release artifact. The Core may bundle modules for v1, but this must not replace standalone packaging.
-
+Cada micro deve gerar seu próprio executável. Empacotamento conjunto pelo Core é estratégia adicional, não substituição do standalone.

@@ -1,20 +1,33 @@
-# ADR-004: Integration API Version
+# ADR-004 — Versionamento do Integration API
 
-Status: Accepted
+## Contexto
 
-## Context
+A versão comercial de um produto não representa necessariamente compatibilidade com o Core.
 
-Product versions and integration compatibility change at different speeds.
+## Decisão
 
-## Decision
+Criar `integration_api` como inteiro independente da versão do produto.
 
-Use a separate integer `integration_api`.
+Exemplo:
 
-## Consequences
+```text
+SMTP Bench Pro 0.2.5
+Integration API 1
+```
 
-Core validates compatibility without tying itself to commercial product versions.
+## Consequências
 
-## Alternatives Considered
+- Core valida contrato por API, não por SemVer do produto.
+- Produtos podem evoluir features sem mudar contrato.
+- Quebras de contrato exigem nova versão de API.
 
-- Use SemVer product version for compatibility: rejected because product releases may include unrelated changes.
+## Alternativas consideradas
+
+- Usar apenas SemVer do produto.
+- Criar range de versões por módulo.
+- Não validar compatibilidade.
+
+## Status
+
+Aceito
 

@@ -1,151 +1,79 @@
-# Bench Pro Module Lifecycle v1
+# Ciclo de Vida dos Módulos
 
-Status: Draft v1.0
+## Lifecycle v1
 
-## Lifecycle
-
-Integration API v1 uses six lifecycle steps:
+O lifecycle mínimo do Bench Pro Core é:
 
 ```text
-discover
-validate
-load
-initialize
-create_widget
-shutdown
-```
-
-No activation or deactivation states are required in v1.
-
-## States
-
-```mermaid
-stateDiagram-v2
-    [*] --> Discovered
-    Discovered --> Validated
-    Validated --> Loaded
-    Loaded --> Initialized
-    Initialized --> WidgetCreated
-    WidgetCreated --> Shutdown
-    Initialized --> Shutdown
-    Loaded --> Shutdown
-    Discovered --> Failed
-    Validated --> Failed
-    Loaded --> Failed
-    Initialized --> Failed
-    WidgetCreated --> Failed
-    Failed --> Shutdown
+discover → validate → load → initialize → create_widget → shutdown
 ```
 
 ## discover
 
-Core discovers candidates through `importlib.metadata.entry_points` using group `benchpro.modules`.
+O Core consulta entry points do grupo `benchpro.modules`.
 
-Expected failures:
-
-- broken package metadata
-- duplicate entry point names
-- unavailable distribution
-
-Core action:
-
-- record diagnostic
-- continue discovering other modules
+Falhas de discovery devem ser registradas em log e isoladas.
 
 ## validate
 
-Core validates metadata and method presence.
+O Core valida:
 
-Expected failures:
+- metadados obrigatórios;
+- `integration_api` suportado;
+- métodos mínimos;
+- formato de capabilities.
 
-- missing required field
-- unsupported `integration_api`
-- invalid `module_id`
-- invalid capabilities shape
-
-Core action:
-
-- reject module
-- expose validation error
-- continue loading other modules
+Módulos inválidos não devem derrubar o Core.
 
 ## load
 
-Core imports and instantiates the module class.
+O Core importa e instancia a classe exposta pelo entry point.
 
-Expected failures:
-
-- import error
-- missing dependency
-- constructor exception
-
-Core action:
-
-- mark module failed
-- keep Core running
-- keep other modules available
+Falhas de import devem ser capturadas e exibidas como módulo indisponível.
 
 ## initialize
 
-Core calls:
+O módulo prepara seu estado interno.
 
-```python
-module.initialize(context=None)
-```
+A operação deve ser idempotente sempre que possível.
 
-The context is optional in v1 and should be treated as best effort. Modules must not require Core-specific types.
-
-Expected failures:
-
-- module resource initialization error
-- missing optional dependency
-- internal configuration error
-
-Rollback:
-
-- Core should call `shutdown()` if an instance exists.
-- Module `shutdown()` must tolerate partial initialization.
+Não deve executar rede automaticamente.
 
 ## create_widget
 
-Core calls:
+O módulo entrega um `QWidget` funcional para o container do Core.
 
-```python
-widget = module.create_widget(parent=container)
-```
-
-The returned object must be a `QWidget`.
-
-Expected failures:
-
-- UI dependency failure
-- invalid widget return type
-- module-specific initialization problem
-
-Rollback:
-
-- detach partial UI
-- call `shutdown()`
-- mark module failed
+O Core não deve recriar o widget a cada troca de navegação. A instância pode ser cacheada durante a sessão.
 
 ## shutdown
 
-Core calls shutdown during application close or after failed initialization.
+O Core chama shutdown ao fechar a aplicação.
 
-Required behavior:
+Regras:
 
-- stop module-owned workers
-- release timers, sockets, and file handles
-- flush module-owned state if needed
-- avoid raising exceptions
+- falha em um módulo não impede shutdown dos demais;
+- exceções são registradas;
+- a aplicação deve fechar normalmente;
+- workers internos pertencem ao módulo.
 
-Idempotency:
+## Rollback e falhas
 
-- `shutdown()` should be safe to call more than once.
+Se `initialize` falhar, o módulo não deve ser ativado.
 
-## Error Handling Boundary
+Se `create_widget` falhar, o Core deve mostrar erro amigável e manter outros módulos funcionais.
 
-Core must treat every module call as a fault boundary.
+Se `shutdown` falhar, o Core registra a falha e continua encerrando.
 
-No exception from a module may close Bench Pro Core.
+## Responsabilidade dos módulos
 
+Cada módulo controla:
+
+- workers;
+- sockets;
+- locks;
+- banco próprio;
+- configurações internas;
+- logs próprios;
+- estado funcional.
+
+O Core hospeda. O módulo executa.

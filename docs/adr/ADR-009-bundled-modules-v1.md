@@ -1,29 +1,29 @@
-# ADR-009: Bundled Modules for Core v1
+# ADR-009 — Módulos embarcados na distribuição v1
 
-Status: Accepted
+## Contexto
 
-## Context
+O Core poderá no futuro suportar módulos instaláveis separadamente, mas a primeira distribuição integrada precisa reduzir variáveis operacionais.
 
-PyInstaller, plugin discovery, dependency resolution, and support are easier when the first Core release is controlled.
+## Decisão
 
-## Decision
+A estratégia preferencial para v1 é uma distribuição completa com módulos aprovados embarcados.
 
-Bench Pro Core v1 should prefer a complete bundled distribution containing supported modules.
+A arquitetura, porém, permanece compatível com instalação modular futura via entry points.
 
-## Consequences
+## Consequências
 
-Initial QA and support are simpler. Future installable modules remain possible.
+- Menos risco de incompatibilidade para usuário final.
+- Build inicial mais previsível.
+- Pipeline de release do Core deve validar módulos incluídos.
+- Instalação modular pode ser adicionada depois sem mudar o contrato v1.
 
-## Alternatives Considered
+## Alternativas consideradas
 
-- Separately installable modules from day one: deferred until the integration model is proven.
+- Marketplace de plugins desde v1.
+- Instalação manual de módulos pelo usuário.
+- Core distribuído vazio.
 
-## Packaging Risk Notes
+## Status
 
-Bench Pro Core discovers modules through `importlib.metadata.entry_points`. Editable installs work for local development,
-but a PyInstaller build may not automatically preserve distribution metadata for each bundled module. The v1 build strategy
-must explicitly include module packages and their entry point metadata, or provide a generated registry produced at build time
-from the same entry point source of truth.
+Aceito
 
-For v1, the preferred release shape remains a complete bundled distribution. Separately installable modules should wait until
-metadata discovery, dependency conflicts, and update semantics are validated in packaged builds.

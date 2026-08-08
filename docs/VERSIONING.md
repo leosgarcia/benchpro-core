@@ -1,55 +1,57 @@
-# Bench Pro Versioning
+# Versionamento do Ecossistema Bench Pro
 
-Status: Draft v1.0
+## Versão do produto
 
-## Product Version
+Cada produto possui SemVer independente.
 
-Every product uses independent Semantic Versioning:
+Exemplos:
 
 ```text
-MAJOR.MINOR.PATCH
+DNS Bench Pro 1.0.0
+SMTP Bench Pro 0.2.5
+Bench Pro Core 0.1.0
 ```
 
-Examples:
+A versão do produto comunica evolução funcional, correções, compatibilidade e releases.
+
+## Integration API
+
+A versão do contrato de integração é um inteiro independente.
+
+Exemplo:
 
 ```text
-DNS Bench Pro 1.2.0
-SMTP Bench Pro 1.0.0
-Bench Pro Core 1.1.0
-```
-
-Product versions describe user-facing release compatibility, features, and fixes.
-
-## Integration API Version
-
-Integration compatibility is a separate integer:
-
-```text
-integration_api = 1
-```
-
-Example:
-
-```text
-SMTP Bench Pro 1.5.2
+SMTP Bench Pro 0.2.5
 Integration API 1
 ```
 
-Bench Pro Core validates `integration_api`, not the product version.
+O Core valida `integration_api`, não a versão comercial do produto.
 
-## Compatibility Rule
+## Quando mudar o Integration API
 
-Core may load a module when:
+Mudar somente quando o contrato obrigatório mudar.
 
-- the module's `integration_api` is supported
-- required metadata is valid
-- required lifecycle methods exist
+Exemplos de mudança que exigem nova API:
 
-Core must reject unsupported Integration API versions with a clear diagnostic.
+- novo método obrigatório;
+- alteração de assinatura obrigatória;
+- mudança semântica incompatível;
+- remoção de metadado obrigatório.
 
-## Breaking Changes
+Não exige nova API:
 
-Any breaking change to required metadata or required lifecycle methods increments the Integration API.
+- nova feature interna do módulo;
+- novo relatório;
+- nova aba;
+- nova versão comercial;
+- nova capability opcional.
 
-Non-breaking additions should be optional capabilities or optional methods.
+## Compatibilidade
 
+Core 0.1.0 suporta:
+
+```text
+Integration API 1
+```
+
+Módulos com API incompatível devem ser rejeitados de forma amigável.

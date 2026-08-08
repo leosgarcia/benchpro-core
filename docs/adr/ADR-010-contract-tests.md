@@ -1,20 +1,35 @@
-# ADR-010: Contract Tests
+# ADR-010 — Testes de contrato
 
-Status: Accepted
+## Contexto
 
-## Context
+Módulos evoluem em repositórios separados. O Core precisa de garantias automáticas de que módulos compatíveis continuam respeitando o contrato.
 
-The ecosystem depends on modules honoring a small integration contract.
+## Decisão
 
-## Decision
+Criar testes de contrato para validar módulos Bench Pro.
 
-Create contract tests that validate metadata, Integration API compatibility, widget creation, lifecycle methods, and failure isolation.
+Validações mínimas:
 
-## Consequences
+- metadata obrigatória;
+- `integration_api` suportado;
+- `create_widget()` retorna `QWidget`;
+- `shutdown()` não derruba o host;
+- módulo inválido é rejeitado;
+- falha de módulo não derruba registry/Core.
 
-Modules can be adapted independently while Core compatibility remains testable.
+## Consequências
 
-## Alternatives Considered
+- Menor risco em integrações futuras.
+- CI do Core pode testar módulos fake e módulos reais instalados.
+- Micros podem copiar testes de contrato localmente.
 
-- Manual validation only: rejected because integration breakage would be easy to miss.
+## Alternativas consideradas
+
+- Validar manualmente apenas pela GUI.
+- Confiar somente em documentação.
+- Criar SDK obrigatório com classes base.
+
+## Status
+
+Aceito
 

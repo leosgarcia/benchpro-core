@@ -1,166 +1,118 @@
 # Bench Pro Design Guidelines
 
-Status: Draft v1.0
+## Objetivo
 
-## Goal
+Este documento define diretrizes visuais e de experiência para produtos Bench Pro. Ele orienta consistência entre DNS Bench Pro, SMTP Bench Pro, Bench Pro Core e futuras aplicações, sem criar dependência runtime compartilhada.
 
-All Bench Pro products should feel like members of the same professional desktop suite while remaining independently implemented and packaged.
+## Princípios
 
-Do not create a shared visual runtime library in v1. This document defines visual and interaction guidance only.
+- Interface profissional, objetiva e densa o suficiente para uso técnico.
+- Prioridade para clareza operacional, não aparência promocional.
+- Estados e ações visíveis, previsíveis e auditáveis.
+- Cores semânticas acompanhadas de texto.
+- Módulos independentes, mas visualmente familiares.
 
-## Current DNS Bench Pro Baseline
+## Estrutura comum
 
-Observed DNS Bench Pro patterns:
+Aplicações standalone devem conter:
 
-- PySide6 desktop UI
-- Main navigation by `QTabWidget`
-- tabs named `Benchmark`, `Servidores`, `Historico`, `Analises`, `Sobre`
-- compact top configuration area
-- grouped controls with `QGroupBox`
-- primary action button using blue background
-- result-heavy views based on tables
-- status bar with concise execution state
-- help menu with guide, shortcuts, online docs, GitHub, issues, and about
-- charts using dark plot background and protocol-specific colors
+- janela principal;
+- menu mínimo;
+- abas ou navegação clara;
+- status bar;
+- tela Sobre;
+- ajuda contextual quando aplicável.
 
-## Navigation
+Modo integrado deve evitar:
 
-Standalone products may use tabs for primary product workflows.
+- menu próprio;
+- status bar própria conflitante;
+- botão Sair;
+- janela interna;
+- aba Sobre duplicada.
 
-Bench Pro Core should use dynamic module navigation and embed each module in a contained workspace.
+## Navegação
 
-Common standalone tabs:
+Preferir:
 
-- Benchmark
-- Servers or Targets
-- History
-- Analysis
-- Reports
-- Settings
-- About
+- abas para áreas principais dentro de uma micro;
+- lista lateral para módulos no Core;
+- master/detail para histórico;
+- diálogos read-only para comparações e relatórios técnicos.
 
-## Tables
+## Tabelas
 
-Tables should be dense, readable, and sortable where useful.
+Tabelas devem:
 
-Recommended behavior:
+- ter colunas úteis e estáveis;
+- evitar excesso de campos;
+- ser redimensionáveis;
+- manter textos de status claros;
+- não depender apenas de cor.
 
-- no inline editing unless the table is explicitly a configuration editor
-- row selection for detail views
-- numeric columns aligned consistently
-- status columns use semantic color sparingly
+## Ações
 
-## Status Bar
+Ações primárias:
 
-Every standalone product should expose:
+- devem estar próximas do contexto;
+- devem ter texto claro;
+- devem ficar desabilitadas quando não forem aplicáveis.
 
-- ready state
-- active execution state
-- completion summary
-- failure summary
-- current session identifier when available
+Ações destrutivas:
 
-## Menus
+- exigem confirmação;
+- devem explicar consequência;
+- devem evitar ambiguidade.
 
-Recommended menus:
+## Severidade
 
-- File
-- Tools, when product-specific utilities exist
-- Help
+Padrão textual:
 
-Common actions:
+- Critical
+- High
+- Medium
+- Low
+- Info
 
-- start benchmark
-- export report
-- open user guide
-- open online documentation
-- open GitHub repository
-- report issue
-- quit
+Cores podem reforçar a leitura, mas o texto é obrigatório.
 
-## About
+## Estados vazios
 
-About views should include:
+Estados vazios devem explicar o que falta e qual ação cria dados.
 
-- product name
-- product version
-- vendor
-- website
-- repository
-- license
-- Python version
-- PySide6/Qt version
-- OS information
-
-## Help
-
-Help should be available offline for basic usage and online for full documentation.
-
-Avoid making tooltips the only source of important guidance.
-
-## Actions
-
-Primary actions:
-
-- visually stronger
-- concise labels
-- disabled while unsafe or unavailable
-
-Destructive actions:
-
-- require confirmation
-- use clear object names, for example `Delete session #42`
-- never run implicitly during navigation
-
-## Colors
-
-Semantic colors:
+Exemplos:
 
 ```text
-success: green
-warning: yellow/amber
-danger: red
-info: blue
-neutral: gray
+Nenhuma execução disponível.
+Execute um benchmark ou diagnóstico para criar histórico.
 ```
-
-DNS chart baseline:
 
 ```text
-UDP: cyan
-TCP: lime
-DOH: amber
-DOT: violet
+Selecione uma execução para visualizar os detalhes.
 ```
 
-Use semantic color for meaning, not decoration.
+## Relatórios
 
-## Spacing
+Relatórios exportados devem:
 
-Desktop tool surfaces should be compact:
+- ser técnicos e neutros;
+- preservar evidências;
+- identificar versão do produto;
+- separar timestamp de execução e timestamp de exportação;
+- escapar dados fornecidos por servidores;
+- evitar conclusões exageradas.
 
-- outer margins around 8-10 px
-- internal group spacing around 6-10 px
-- avoid oversized marketing-style hero layouts inside tools
+## Sobre
 
-## Tooltips
+A tela Sobre deve conter:
 
-Tooltips should clarify controls whose effect is not obvious.
+- nome do produto;
+- versão;
+- fornecedor;
+- copyright;
+- propósito curto;
+- módulos carregados, no caso do Core.
 
-Do not put long documentation in tooltips.
+## Independência de implementação
 
-## Dialogs
-
-Dialogs should be modal only when a decision is required.
-
-Use non-blocking status updates for routine progress.
-
-## Charts
-
-Charts should:
-
-- preserve protocol identity by color
-- use readable axis labels
-- avoid over-animation
-- keep dark plot styling only when it improves contrast with the rest of the product
-
+Estas diretrizes não exigem QSS, biblioteca visual ou pacote compartilhado. Cada produto pode implementar localmente, desde que respeite a experiência comum.

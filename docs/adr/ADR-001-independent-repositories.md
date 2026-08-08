@@ -1,21 +1,34 @@
-# ADR-001: Independent Repositories
+# ADR-001 — Repositórios independentes
 
-Status: Accepted
+## Contexto
 
-## Context
+O ecossistema Bench Pro contém múltiplos produtos com ciclos de vida diferentes. DNS Bench Pro, SMTP Bench Pro e Bench Pro Core precisam evoluir, versionar e publicar releases sem bloquear uns aos outros.
 
-Bench Pro contains multiple commercial/open-source desktop products. Each product must have independent releases, issues, CI, documentation, and executables.
+## Decisão
 
-## Decision
+Cada produto terá repositório Git próprio.
 
-Use one Git repository per product.
+Exemplos:
 
-## Consequences
+- `dns-bench-pro`
+- `smtp-bench-pro`
+- `benchpro-core`
+- futuros `ssl-bench-pro`, `http-bench-pro`, `ssh-bench-pro`
 
-Products can evolve and release independently. Cross-product coordination requires explicit version and compatibility documentation.
+## Consequências
 
-## Alternatives Considered
+- Releases independentes.
+- Issues e CI por produto.
+- Menor acoplamento organizacional.
+- Necessidade de validar integração entre repositórios.
 
-- Monorepo: simpler workspace operations, but higher coupling risk.
-- Git submodules: possible later, but unnecessary before the ecosystem stabilizes.
+## Alternativas consideradas
+
+- Monorepo único para toda a suíte.
+- Submodules Git.
+- Repositório pai sem estratégia formal.
+
+## Status
+
+Aceito
 

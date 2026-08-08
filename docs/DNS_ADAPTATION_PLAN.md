@@ -1,20 +1,12 @@
-# DNS Bench Pro Adaptation Plan
+# Plano de Adaptação do DNS Bench Pro
 
-Status: Proposed
+## Objetivo
 
-## Goal
+Adaptar o DNS Bench Pro existente para integração com o Bench Pro Core com o menor conjunto de alterações possível.
 
-Transform DNS Bench Pro into:
+## Fase A — Criar pacote de integração
 
-```text
-Standalone Application + Integratable Module
-```
-
-without rewriting the product or breaking standalone behavior.
-
-## Phase A: Create Integration Package
-
-Add:
+Adicionar:
 
 ```text
 src/integration/
@@ -22,132 +14,79 @@ src/integration/
 └── module.py
 ```
 
-Create `DNSBenchModule` metadata:
+Responsabilidade:
 
-```python
-module_id = "dns"
-display_name = "DNS Bench Pro"
-version = "1.0.0"
-integration_api = 1
-vendor = "WL Tech"
-capabilities = {"benchmark", "diagnostics", "history", "reports", "charts"}
-```
+- expor metadados;
+- implementar Integration API v1;
+- criar widget integrado;
+- preservar standalone.
 
-Rollback: remove the new `integration` package.
+## Fase B — Criar widget reutilizável
 
-Risk: LOW.
-
-## Phase B: Create DNSBenchWidget
-
-Extract the central product workspace from `MainWindow` into:
+Extrair o conteúdo funcional para:
 
 ```text
 src/ui/widgets/dns_bench_widget.py
 ```
 
-This widget should contain:
+Este widget deve conter a experiência operacional principal, sem menu global e sem tela Sobre obrigatória.
 
-- Benchmark tab
-- Servers tab
-- History tab
-- Analysis tab
-- About tab if appropriate for standalone reuse
-- benchmark controls
-- progress handling
-- engine signal wiring
+## Fase C — Adaptar janela standalone
 
-Rollback: leave `MainWindow` as-is and remove the new widget.
+A MainWindow standalone passa a compor `DNSBenchWidget`.
 
-Risk: HIGH because this touches the main UI.
+Não remover menus, status bar, ajuda e Sobre do modo standalone.
 
-## Phase C: Adapt StandaloneMainWindow
+## Fase D — Configurar entry point
 
-Refactor `MainWindow` or introduce `StandaloneMainWindow` so the standalone shell owns:
-
-- menu bar
-- status bar
-- window title
-- window icon
-- close behavior
-
-The shell hosts `DNSBenchWidget`.
-
-Rollback: restore previous `MainWindow` implementation.
-
-Risk: MEDIUM.
-
-## Phase D: Add Entry Point
-
-Update `pyproject.toml`:
+Adicionar ao `pyproject.toml`:
 
 ```toml
 [project.entry-points."benchpro.modules"]
 dns = "integration.module:DNSBenchModule"
 ```
 
-The exact import path should match the existing package/import layout.
+## Fase E — Testes de contrato
 
-Rollback: remove the entry point.
+Validar:
 
-Risk: LOW.
+- metadata completa;
+- `integration_api == 1`;
+- `create_widget()` retorna `QWidget`;
+- widget integrado não é `QMainWindow`;
+- shutdown não falha.
 
-## Phase E: Add Contract Tests
+## Fase F — Validar standalone
 
-Add DNS-local contract tests verifying:
+Executar:
 
-- metadata exists
-- `integration_api == 1`
-- no imports of `bench_pro_core`
-- `initialize()` does not fail
-- `create_widget()` returns `QWidget`
-- `shutdown()` does not fail
-
-Rollback: remove the new tests.
-
-Risk: LOW.
-
-## Phase F: Validate Standalone
-
-Run:
-
-```text
-python src/main.py
+```bash
 pytest
+python src/main.py
 ```
 
-or equivalent project commands.
+A aplicação standalone deve continuar igual para o usuário.
 
-Acceptance:
+## Fase G — Validar integração futura
 
-```text
-DNS Standalone: PASS
-DNS Tests: PASS
+Instalar em modo editable ao lado do Core:
+
+```bash
+python -m pip install -e ..\dns-bench-pro
+python -m benchpro_core --list-modules
 ```
 
-Risk: LOW.
+O Core deve descobrir DNS Bench Pro sem tratamento especial.
 
-## Phase G: Validate Future Integration
+## Rollback
 
-Use a minimal fake Core loader or Bench Pro Core contract tests to load the DNS entry point.
+Cada fase é reversível:
 
-Acceptance:
+- remover entry point;
+- remover pacote integration;
+- retornar MainWindow ao estado anterior;
+- manter banco e schema intactos.
 
-```text
-DNS Module: PASS
-Core Loader: PASS
-Standalone still PASS
-```
+## Risco principal
 
-Risk: MEDIUM.
-
-## Release Rule
-
-No DNS release is acceptable unless:
-
-```text
-Standalone PASS
-Tests PASS
-Integration Contract PASS
-No bench_pro_core imports PASS
-```
-
+O maior risco é misturar lógica de Core dentro do DNS. Isso deve ser evitado com adapter pattern e contrato mínimo.

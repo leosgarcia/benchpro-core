@@ -1,22 +1,10 @@
-# Bench Pro Architecture
+# Arquitetura do Bench Pro Core
 
-Status: Draft v1.0
+## 1. Visão do ecossistema
 
-Vendor: WL Tech
+O ecossistema **Bench Pro** é composto por produtos desktop independentes, desenvolvidos pela **WL Tech**, voltados a diagnóstico, benchmark e auditoria de infraestrutura.
 
-Copyright: Copyright (c) 2026 WL Tech
-
-## Purpose
-
-Bench Pro is a federated ecosystem of professional desktop diagnostic and benchmark tools.
-
-The ecosystem contains independent micro applications, such as DNS Bench Pro and SMTP Bench Pro, and a separate aggregator product named Bench Pro Core.
-
-The architectural goal is to let every micro application remain a complete standalone product while also exposing an optional integration surface that Bench Pro Core can discover and host.
-
-## Products
-
-Initial products:
+Produtos atuais e planejados:
 
 - DNS Bench Pro
 - SMTP Bench Pro
@@ -26,171 +14,173 @@ Initial products:
 - NTP Bench Pro
 - Bench Pro Core
 
-Each product owns its repository, version, release process, issue tracker, database, settings, logs, documentation, CI, and executable.
+O **Bench Pro Core** é a aplicação agregadora. Ele hospeda módulos compatíveis dentro de uma interface única, mas não é uma dependência obrigatória das aplicações micro.
 
-## Core Rule
+## 2. Princípio fundamental
 
-The dependency direction is absolute:
+Cada micro aplicação é um produto completo.
+
+Cada micro deve possuir:
+
+- repositório próprio;
+- versão própria;
+- banco SQLite próprio;
+- configuração própria;
+- documentação própria;
+- CI própria;
+- build próprio;
+- release própria;
+- executável próprio.
+
+O Core agrega módulos. As micros não pertencem ao Core.
+
+## 3. Direção de dependência
+
+Permitido:
 
 ```text
 Bench Pro Core
-      |
-      v
-Micro applications
+      ↓
+Módulo DNS / SMTP / SSL / HTTP
 ```
 
-Never:
+Proibido:
 
 ```text
-Micro application
-      |
-      v
+DNS Bench Pro / SMTP Bench Pro
+      ↓
 Bench Pro Core
 ```
 
-Micro applications must not import `bench_pro_core`, depend on Core settings, depend on Core databases, or require Bench Pro Core to be installed.
+Nenhuma micro aplicação deve importar `benchpro_core.*`.
 
-## Architecture Overview
-
-```mermaid
-flowchart TD
-    Core[Bench Pro Core] --> Registry[Module Registry]
-    Registry --> Discovery[Entry Point Discovery]
-    Discovery --> DNS[DNS Bench Pro Module]
-    Discovery --> SMTP[SMTP Bench Pro Module]
-    Discovery --> SSL[SSL Bench Pro Module]
-
-    DNS --> DNSApp[DNS Standalone Product]
-    SMTP --> SMTPApp[SMTP Standalone Product]
-    SSL --> SSLApp[SSL Standalone Product]
-
-    DNSApp -. independent .-> DNSDB[(dns-bench-pro.db)]
-    SMTPApp -. independent .-> SMTPDB[(smtp-bench-pro.db)]
-    Core -. independent .-> CoreDB[(bench-pro-core.db)]
-```
-
-## Micro Application Shape
-
-Each micro application has two personalities:
-
-- Standalone Application
-- Integratable Module
-
-Standalone execution examples:
-
-```text
-python -m dns_bench_pro
-DNS-Bench-Pro.exe
-```
-
-Integrated execution:
-
-```text
-Bench Pro Core discovers DNS Bench Pro and embeds its integration widget.
-```
-
-The integration capability is optional. A micro application must be useful, testable, and releasable without the Core.
-
-## Internal Layering
-
-Micro applications should keep business logic outside PySide6 widgets.
-
-Recommended flow:
+## 4. Fluxo de integração
 
 ```mermaid
 flowchart TD
-    UI[PySide6 UI] --> App[Application Services]
-    App --> Engine[Protocol Engine]
-    Engine --> Domain[Domain Models]
-    App --> Persistence[Persistence]
-    App --> Export[Export]
-    App --> Reporting[Reporting]
+    A[Início do Bench Pro Core] --> B[Discovery via entry points]
+    B --> C[Validação do Integration API]
+    C --> D[Load do módulo]
+    D --> E[initialize]
+    E --> F[create_widget]
+    F --> G[Module Container]
+    G --> H[shutdown]
 ```
 
-Anti-pattern:
+O Core não instancia classes internas de DNS, SMTP ou qualquer outro produto. Ele fala apenas com o contrato mínimo de integração.
+
+## 5. Contrato de integração
+
+O Integration API v1 exige apenas:
+
+Metadados:
+
+- `module_id`
+- `display_name`
+- `version`
+- `integration_api`
+- `vendor`
+- `capabilities`
+
+Métodos:
+
+- `initialize()`
+- `create_widget(parent=None)`
+- `shutdown()`
+
+O contrato é intencionalmente pequeno para evitar acoplamento prematuro.
+
+## 6. Descoberta de módulos
+
+A descoberta usa o mecanismo padrão do Python:
+
+```toml
+[project.entry-points."benchpro.modules"]
+dns = "integration.module:DNSBenchModule"
+smtp = "smtp_bench_pro.integration.module:SMTPBenchModule"
+```
+
+Vantagens:
+
+- testável;
+- compatível com pacotes instalados/editable;
+- não exige registry externo;
+- não obriga a micro a conhecer o Core.
+
+## 7. Dados separados
+
+Cada produto mantém seu próprio banco.
+
+Exemplo:
 
 ```text
-MainWindow resolves protocol traffic, calculates statistics, and writes SQLite directly.
+%APPDATA%\WL Tech\Bench Pro Core\bench-pro-core.db
+%APPDATA%\WL Tech\DNS Bench Pro\dns-bench-pro.db
+%APPDATA%\WL Tech\SMTP Bench Pro\smtp-bench-pro.db
 ```
 
-Preferred:
+O Core não deve executar consultas SQL diretamente no banco de uma micro. Se precisar ler histórico, relatórios ou resultados, deve usar uma API pública da própria micro.
 
-```text
-MainWindow or ProductWidget calls Application Services.
-Application Services orchestrate Engine and Persistence.
-```
+## 8. Isolamento de falhas
 
-## Integration Flow
+Falha em um módulo não pode derrubar o Core.
 
-```mermaid
-sequenceDiagram
-    participant Core as Bench Pro Core
-    participant EP as importlib.metadata
-    participant Mod as Micro Module
+O Core deve tratar falhas em:
 
-    Core->>EP: discover group benchpro.modules
-    EP-->>Core: entry point list
-    Core->>Core: validate metadata and api
-    Core->>Mod: load module class
-    Core->>Mod: initialize(context)
-    Core->>Mod: create_widget(parent)
-    Mod-->>Core: QWidget
-    Core->>Core: mount widget in shell
-    Core->>Mod: shutdown()
-```
+- discovery;
+- import;
+- validação de contrato;
+- initialize;
+- create_widget;
+- shutdown.
 
-## Data Isolation
+Quando um módulo falha, os demais continuam disponíveis.
 
-Every product owns its data.
+## 9. UI Shell
 
-Examples:
+A interface atual do Core contém:
 
-```text
-%APPDATA%\WL Tech\DNS Bench Pro\
-%APPDATA%\WL Tech\SMTP Bench Pro\
-%APPDATA%\WL Tech\Bench Pro Core\
-```
+- janela principal;
+- navegação vertical;
+- container genérico de módulos;
+- estado vazio;
+- diálogo Sobre;
+- status bar;
+- menu mínimo.
 
-Bench Pro Core must not directly query a micro application's SQLite tables. If integrated history is needed, the module should expose an application-level reader or reporting capability.
+O Core não duplica UI de módulos. O widget renderizado vem de `create_widget()`.
 
-## Versioning
+## 10. Evolução
 
-Each product uses independent Semantic Versioning.
+A arquitetura foi desenhada para crescer sem se transformar em framework interno prematuro.
 
-Integration compatibility is controlled by a separate integer:
+Regras de evolução:
 
-```text
-Product Version: DNS Bench Pro 1.4.2
-Integration API: 1
-```
+- manter Integration API v1 estável;
+- adicionar capabilities somente quando houver semântica clara;
+- extrair biblioteca compartilhada apenas após duplicação real;
+- manter contrato pequeno;
+- preservar standalone de cada micro;
+- testar sempre standalone e integrado.
 
-Bench Pro Core validates the Integration API, not the commercial product version.
+## 11. Estratégias futuras
 
-## Packaging
+Possíveis evoluções:
 
-Each micro application builds its own executable.
+- dashboard integrado de infraestrutura;
+- relatório consolidado de saúde;
+- exportação integrada;
+- empacotamento com módulos embarcados;
+- instalação modular futura;
+- Integration API v2 quando houver necessidade real.
 
-Bench Pro Core v1 should prefer a bundled distribution containing supported modules because this reduces installation, support, and PyInstaller complexity.
+## 12. Critério de qualidade arquitetural
 
-Future versions may support separately installable modules after the integration model is proven.
+Uma alteração é aceitável somente se:
 
-## Failure Isolation
-
-A module failure must not close Bench Pro Core.
-
-Core behavior:
-
-- mark module as failed
-- preserve the error details
-- keep other modules usable
-- allow the user to inspect diagnostics
-- continue shutdown cleanly
-
-Module boundaries must catch exceptions during discovery, validation, loading, initialization, widget creation, and shutdown.
-
-## Evolution Strategy
-
-Do not create a shared runtime SDK in v1.
-
-Use Python entry points, metadata, and duck typing first. Extract shared packages only after real duplication appears in at least three products or after a documented architectural need becomes unavoidable.
-
+- não quebra standalone de uma micro;
+- não cria dependência da micro para o Core;
+- não força banco/configuração compartilhada;
+- não acopla o Core a classes internas de produto;
+- mantém falhas isoladas;
+- possui teste de contrato ou integração correspondente.

@@ -1,35 +1,63 @@
-# Bench Pro Capabilities
+# Capabilities do Ecossistema Bench Pro
 
-Capabilities are high-level product abilities exposed by a micro application through Integration API v1.
-They are used for discovery, navigation, future dashboards, and compatibility decisions. They must not be
-arbitrary labels for internal implementation details.
+## Objetivo
 
-## Definitions
+Capabilities descrevem o que um módulo oferece ao Bench Pro Core. Elas não são rótulos de marketing; são declarações funcionais que o Core pode usar para montar navegação, dashboards, relatórios e fluxos futuros.
 
-| Capability | Definition |
-| --- | --- |
-| benchmark | Executes repeated measurements and exposes timing/performance results. |
-| diagnostics | Executes functional or protocol-level checks and exposes diagnostic findings. |
-| history | Exposes a usable history feature to the user, not only raw persistence. |
-| reports | Generates formal exportable reports intended for delivery or archival. |
-| charts | Provides visual charting/graphical analysis of collected results. |
-| security_audit | Performs explicit security checks and produces security findings. |
+## Regra principal
 
-## Current Module Matrix
+Um módulo só deve declarar uma capability quando a funcionalidade existir de forma utilizável.
 
-| Capability | DNS Bench Pro 1.0.0 | SMTP Bench Pro 0.1.0 | Notes |
-| --- | --- | --- | --- |
-| benchmark | yes | yes | Both execute repeated measurements. |
-| diagnostics | yes | yes | SMTP currently covers banner, EHLO, STARTTLS/SMTPS, and TLS inspection. |
-| history | yes | yes | SMTP has SQLite persistence and a basic visible History tab. |
-| reports | yes | no | SMTP formal reports are out of scope for 0.1.0. |
-| charts | yes | no | SMTP charts are out of scope for 0.1.0. |
-| security_audit | no | no | SMTP TLS inspection exists, but no formal security audit yet. |
-| tls | no | review | TLS is currently an SMTP internal diagnostic aspect, not a documented Core-level capability. |
+Não declarar capabilities futuras.
 
-## SMTP TLS Capability Review
+## Capabilities v1
 
-SMTP Bench Pro 0.1.0 currently advertises `tls`. This is accurate as an implemented internal feature,
-but it is not yet a standardized high-level capability in the Core contract. Before relying on `tls` in
-Core behavior, the ecosystem should either promote it to a documented capability or fold it under
-`diagnostics` / future `security_audit` semantics.
+| Capability | Definição |
+| :--- | :--- |
+| `benchmark` | Executa medições repetidas e produz resultados quantitativos. |
+| `diagnostics` | Executa verificações funcionais/protocolares estruturadas. |
+| `history` | Persiste e expõe histórico utilizável. |
+| `reports` | Gera relatórios formais para usuário ou cliente. |
+| `charts` | Possui visualizações gráficas dedicadas. |
+| `security_audit` | Produz achados de segurança com severidade e evidência. |
+| `dns_checks` | Executa consultas DNS auxiliares ao diagnóstico principal. |
+
+## Exemplos atuais
+
+DNS Bench Pro:
+
+```text
+benchmark
+diagnostics
+history
+reports
+charts
+```
+
+SMTP Bench Pro:
+
+```text
+benchmark
+diagnostics
+history
+security_audit
+```
+
+## Cuidados
+
+- `tls` não deve ser usado como capability se for apenas detalhe interno de diagnóstico.
+- `history` exige visualização ou API de histórico utilizável.
+- `security_audit` exige findings estruturados, não apenas mensagens de aviso.
+- `reports` deve significar exportação formal, não apenas tela de resultados.
+
+## Uso pelo Core
+
+O Core pode usar capabilities para:
+
+- exibir ou ocultar áreas futuras;
+- montar dashboards;
+- informar recursos disponíveis no Sobre;
+- validar compatibilidade;
+- direcionar fluxos integrados.
+
+O Core não deve assumir que todos os módulos possuem as mesmas capabilities.

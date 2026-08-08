@@ -1,20 +1,29 @@
-# ADR-007: In-Process Integration
+# ADR-007 — Integração em processo
 
-Status: Accepted
+## Contexto
 
-## Context
+O Core precisa hospedar módulos de forma real, compartilhando a experiência desktop, sem simplesmente abrir executáveis externos.
 
-Core should embed module UI and workflows naturally.
+## Decisão
 
-## Decision
+A integração v1 será em processo, via import Python e widget Qt retornado pelo módulo.
 
-Prefer in-process Python integration for v1.
+Subprocessos ficam reservados para cenários futuros de isolamento forte.
 
-## Consequences
+## Consequências
 
-The user experience is coherent and avoids subprocess coordination. Core must isolate failures around module boundaries.
+- Experiência visual integrada.
+- Comunicação simples por contrato Python.
+- Necessidade de isolamento de falhas em boundaries.
+- Módulos continuam responsáveis por seus workers e recursos.
 
-## Alternatives Considered
+## Alternativas consideradas
 
-- Launch micro executables via subprocess: rejected for normal integration because it is not a real embedded module model.
+- Abrir `DNS-Bench-Pro.exe` por subprocess.
+- RPC local.
+- Processo separado por módulo desde v1.
+
+## Status
+
+Aceito
 

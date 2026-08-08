@@ -1,21 +1,31 @@
-# ADR-003: Entry Points for Module Discovery
+# ADR-003 — Discovery por entry points
 
-Status: Accepted
+## Contexto
 
-## Context
+O Core precisa descobrir módulos instalados sem registry manual e sem exigir que as micros conheçam o host.
 
-Bench Pro Core needs a standard and testable way to discover installed modules.
+## Decisão
 
-## Decision
+Usar `importlib.metadata.entry_points` com o grupo:
 
-Use `importlib.metadata.entry_points` with group `benchpro.modules`.
+```text
+benchpro.modules
+```
 
-## Consequences
+## Consequências
 
-Discovery follows Python packaging standards and requires no custom registry in v1.
+- Mecanismo padrão do Python.
+- Funciona com instalações editable.
+- Testável em CI.
+- Não exige arquivo de manifesto externo na v1.
 
-## Alternatives Considered
+## Alternativas consideradas
 
-- JSON manifests: useful for future external distribution, but less native for Python packages.
-- Manual registry: simple but brittle and less discoverable.
+- Manifestos JSON.
+- Registry explícito mantido pelo Core.
+- Busca por diretórios locais.
+
+## Status
+
+Aceito
 
