@@ -35,8 +35,9 @@ class ModuleNavigation(QWidget):
             "QWidget { background: #18181b; color: #e4e4e7; }"
             "QLabel#navHeading { font-weight: 600; color: #fafafa; }"
             "QListWidget { border: 1px solid #3f3f46; background: #202024; outline: 0; }"
-            "QListWidget::item { padding: 8px; border-bottom: 1px solid #2f2f35; }"
-            "QListWidget::item:selected { background: #2563eb; color: white; }"
+            "QListWidget::item { padding: 9px; border-bottom: 1px solid #2f2f35; }"
+            "QListWidget::item:hover { background: #27272f; }"
+            "QListWidget::item:selected { background: #2563eb; color: white; border-left: 3px solid #93c5fd; }"
         )
 
     def set_modules(self, modules: list[Any], failed_modules: list[Any]) -> None:
@@ -44,8 +45,10 @@ class ModuleNavigation(QWidget):
         for module in modules:
             item = QListWidgetItem(module.display_name)
             item.setData(Qt.UserRole, {"kind": "module", "module_id": module.module_id})
+            capabilities = ", ".join(sorted(str(capability) for capability in module.capabilities)) or "-"
             item.setToolTip(
-                f"{module.display_name}\nVersion {module.version}\nIntegration API {module.integration_api}"
+                f"{module.display_name}\nVersão {module.version}\nIntegration API {module.integration_api}\n"
+                f"Status: Disponível\nCapacidades: {capabilities}"
             )
             self.list_widget.addItem(item)
 

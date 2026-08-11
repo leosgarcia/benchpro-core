@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QApplication, QLabel
 from benchpro_core.module_host.loader import FailedModule, LoadedModule
 from benchpro_core.module_host.registry import ModuleRegistry
 from benchpro_core.ui.about import AboutDialog
+from benchpro_core.ui.dashboard import CoreDashboardWidget
 from benchpro_core.ui.empty_state import EmptyStateWidget
 from benchpro_core.ui.main_window import BenchProMainWindow
 from benchpro_core.ui.module_container import ModuleContainer
@@ -61,10 +62,10 @@ def test_main_window_instantiates(qapp, settings):
     window.close()
 
 
-def test_empty_state_appears(qapp, settings):
+def test_dashboard_appears_on_startup(qapp, settings):
     window = BenchProMainWindow(loaded_modules=[], settings=settings)
 
-    assert isinstance(window.module_container.current_widget, EmptyStateWidget)
+    assert isinstance(window.module_container.current_widget, CoreDashboardWidget)
 
     window.close()
 
@@ -265,3 +266,51 @@ def test_module_container_error_reason(qapp):
 
     assert "Módulo indisponível" in labels
     assert "erro resumido" in labels
+
+
+def test_dashboard_lists_modules_versions_and_opens_module(qapp, settings):
+    module = FakeModule(module_id="dns", display_name="DNS Bench Pro")
+    window = BenchProMainWindow(loaded_modules=[loaded(module)], settings=settings)
+
+    dashboard = window.module_container.current_widget
+    assert isinstance(dashboard, CoreDashboardWidget)
+    labels = "\n".join(label.text() for label in dashboard.findChildren(QLabel))
+    assert "dns" in dashboard.module_buttons
+    assert "Versão: 1.0.0" in labels
+    assert "Status: Disponível" in labels
+    assert "HTTP Bench Pro" not in labels
+
+    dashboard.module_buttons["dns"].click()
+    qapp.processEvents()
+
+    assert module.create_widget_calls == 1
+    assert window.module_container.current_widget.text() == "DNS Bench Pro widget"
+    assert "Versão 1.0.0" in window.module_container._subtitle.text()
+
+    window.close()
+
+
+def test_dashboard_shows_failed_module_as_unavailable(qapp, settings):
+    failed = FailedModule(name="smtp", error_type="ModuleLoadError", message="simulated failure")
+    window = BenchProMainWindow(loaded_modules=[], failed_modules=[failed], settings=settings)
+
+    dashboard = window.module_container.current_widget
+    assert isinstance(dashboard, CoreDashboardWidget)
+    labels = "\n".join(label.text() for label in dashboard.findChildren(QLabel))
+    assert "Status: Indisponível" in labels
+    assert "simulated failure" in labels
+
+    window.close()
+
+
+def test_navigation_tooltip_contains_generic_metadata(qapp, settings):
+    module = FakeModule(module_id="smtp", display_name="SMTP Bench Pro")
+    window = BenchProMainWindow(loaded_modules=[loaded(module)], settings=settings)
+
+    tooltip = window.navigation.list_widget.item(0).toolTip()
+    assert "SMTP Bench Pro" in tooltip
+    assert "Versão 1.0.0" in tooltip
+    assert "Integration API 1" in tooltip
+    assert "Capacidades: benchmark" in tooltip
+
+    window.close()

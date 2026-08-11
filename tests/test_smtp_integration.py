@@ -35,7 +35,7 @@ def test_real_smtp_module_contract_and_widget_smoke(qapp):
     assert not isinstance(widget, QMainWindow)
 
     labels = [widget.tab_widget.tabText(index) for index in range(widget.tab_widget.count())]
-    assert labels == ["Benchmark", "Diagnóstico", "Segurança", "Histórico"]
+    assert labels == ["Benchmark", "Diagnóstico", "Segurança", "Histórico", "DNS de E-mail"]
     assert "Sobre" not in labels
 
     module.shutdown()

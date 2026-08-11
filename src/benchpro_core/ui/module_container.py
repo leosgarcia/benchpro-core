@@ -12,9 +12,22 @@ class ModuleContainer(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._current_widget: QWidget | None = None
+        self._header = QWidget(self)
+        header_layout = QVBoxLayout(self._header)
+        header_layout.setContentsMargins(14, 12, 14, 8)
+        header_layout.setSpacing(2)
+        self._title = QLabel("")
+        self._title.setObjectName("moduleHeaderTitle")
+        self._subtitle = QLabel("")
+        self._subtitle.setObjectName("moduleHeaderSubtitle")
+        self._subtitle.setWordWrap(True)
+        header_layout.addWidget(self._title)
+        header_layout.addWidget(self._subtitle)
         self._layout = QVBoxLayout(self)
         self._layout.setContentsMargins(0, 0, 0, 0)
         self._layout.setSpacing(0)
+        self._layout.addWidget(self._header)
+        self._header.hide()
         self.show_empty_state()
 
     def clear(self) -> None:
@@ -23,9 +36,15 @@ class ModuleContainer(QWidget):
             self._current_widget.hide()
             self._current_widget = None
 
-    def show_module(self, widget: QWidget) -> None:
+    def show_module(self, widget: QWidget, title: str | None = None, subtitle: str | None = None) -> None:
         self.clear()
         self._current_widget = widget
+        if title:
+            self._title.setText(title)
+            self._subtitle.setText(subtitle or "")
+            self._header.show()
+        else:
+            self._header.hide()
         if widget.parent() is None:
             widget.setParent(self)
         self._layout.addWidget(widget)
@@ -34,6 +53,10 @@ class ModuleContainer(QWidget):
     def show_empty_state(self, module_count: int = 0) -> None:
         self.clear()
         self.show_module(EmptyStateWidget(module_count=module_count, parent=self))
+
+    def show_dashboard(self, widget: QWidget) -> None:
+        self.clear()
+        self.show_module(widget)
 
     def show_error(self, title: str, message: str, reason: str | None = None) -> None:
         self.clear()
@@ -65,6 +88,7 @@ class ModuleContainer(QWidget):
         footer.setAlignment(Qt.AlignCenter)
         layout.addWidget(footer)
 
+        self._header.hide()
         error_widget.setStyleSheet(
             "QLabel#errorTitle { font-size: 18px; font-weight: 600; color: #fca5a5; }"
             "QLabel#errorReason { color: #f4f4f5; }"

@@ -11,6 +11,7 @@ from benchpro_core.module_host.errors import DuplicateModuleError
 from benchpro_core.module_host.loader import FailedModule, LoadedModule, load_modules
 from benchpro_core.module_host.registry import ModuleRegistry
 from benchpro_core.ui.about import AboutDialog
+from benchpro_core.ui.dashboard import CoreDashboardWidget
 from benchpro_core.ui.module_container import ModuleContainer
 from benchpro_core.ui.navigation import ModuleNavigation
 from benchpro_core.ui.text import sanitize_error_message
@@ -53,7 +54,7 @@ class BenchProMainWindow(QMainWindow):
         self._set_status("Inicializando Bench Pro Core...")
         self._load_startup_modules(loaded_modules)
         self._populate_navigation()
-        self.module_container.show_empty_state(len(self.registry.list_modules()))
+        self._show_dashboard()
         self._set_ready_status()
 
     def _create_layout(self) -> None:
@@ -91,6 +92,19 @@ class BenchProMainWindow(QMainWindow):
             "QMenu { background: #18181b; color: #f4f4f5; border: 1px solid #3f3f46; }"
             "QMenu::item:selected { background: #2563eb; }"
             "QStatusBar { background: #18181b; color: #d4d4d8; }"
+            "QWidget { color: #e4e4e7; font-family: Segoe UI, Arial, sans-serif; font-size: 10pt; }"
+            "QLabel#dashboardTitle { font-size: 20px; font-weight: 700; color: #fafafa; }"
+            "QLabel#dashboardSubtitle, QLabel#dashboardNote, QLabel#moduleHeaderSubtitle { color: #a1a1aa; }"
+            "QLabel#dashboardValue { font-weight: 700; color: #fafafa; }"
+            "QLabel#moduleHeaderTitle { font-size: 14px; font-weight: 700; color: #fafafa; }"
+            "QGroupBox { border: 1px solid #3f3f46; border-radius: 6px; margin-top: 12px; padding: 12px; }"
+            "QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 4px; font-weight: 600; }"
+            "QGroupBox#moduleCard { background: #202024; }"
+            "QPushButton { background: #303846; color: #f8fafc; border: 1px solid #3a4556; "
+            "border-radius: 4px; padding: 7px 12px; font-weight: 600; }"
+            "QPushButton:hover { background: #3a4556; }"
+            "QPushButton#primaryButton { background: #2563eb; border: 1px solid #3b82f6; color: white; }"
+            "QPushButton#primaryButton:hover { background: #1d4ed8; }"
         )
 
     def _restore_window_state(self) -> None:
@@ -154,6 +168,11 @@ class BenchProMainWindow(QMainWindow):
     def _populate_navigation(self) -> None:
         self.navigation.set_modules(self.registry.list_modules(), self.failed_modules)
 
+    def _show_dashboard(self) -> None:
+        dashboard = CoreDashboardWidget(self.registry.list_modules(), self.failed_modules, parent=self.module_container)
+        dashboard.module_requested.connect(self.activate_module)
+        self.module_container.show_dashboard(dashboard)
+
     def _set_status(self, message: str) -> None:
         if hasattr(self, "status_bar"):
             self.status_bar.showMessage(message)
@@ -184,7 +203,9 @@ class BenchProMainWindow(QMainWindow):
                 logger.info("Creating widget for module: %s", module_id)
                 self._set_status(f"Carregando {module.display_name}...")
                 self._widget_cache[module_id] = module.create_widget(parent=self.module_container)
-            self.module_container.show_module(self._widget_cache[module_id])
+            capabilities = ", ".join(sorted(str(capability) for capability in module.capabilities)) or "-"
+            subtitle = f"Versão {module.version} | Integration API {module.integration_api} | {capabilities}"
+            self.module_container.show_module(self._widget_cache[module_id], module.display_name, subtitle)
             self._set_status(f"{module.display_name} ativo")
             logger.info("Module activated: %s", module_id)
         except Exception as exc:

@@ -93,7 +93,7 @@ Bench Pro Core 0.1.0
 
 Discovered modules:
 DNS Bench Pro 1.0.0 [API 1]
-SMTP Bench Pro 0.2.5 [API 1]
+SMTP Bench Pro 0.4.0 [API 1]
 ```
 
 ## Estrutura do projeto
@@ -157,3 +157,4 @@ O Core não coleta senhas, tokens, certificados privados ou credenciais das apli
 Bench Pro Core é distribuído sob a [Licença MIT](LICENSE).
 
 © 2026 WL Tech. Website: https://wltech.com.br
+
